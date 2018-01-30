@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Send Sensor Data</string>
+    <string name="settings_description">Enter the connection settings below. They are displayed under the "Connection tab of your GUI</string>
+    <string name="ip_address">IP Address:</string>
+    <string name="port">Port:</string>
+    <string name="connect">Connect</string>
+</resources>
