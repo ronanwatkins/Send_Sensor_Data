@@ -16,6 +16,12 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        <activity
+                android:name=".SecondActivity"
+                android:label="@string/title_activity_second"
+                android:theme="@style/AppTheme.NoActionBar">
+        </activity>
+        <service android:name="com.example.g00296814.send_sensor_data.SendSensorDataService"/>
     </application>
 
 </manifest>
