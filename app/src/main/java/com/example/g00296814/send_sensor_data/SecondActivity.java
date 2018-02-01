@@ -8,6 +8,8 @@ import android.util.Log;
 
 public class SecondActivity extends AppCompatActivity {
 
+    private final String TAG = SecondActivity.class.getSimpleName();
+
     private ComponentName service;
     private Intent intentMyService;
     private BroadcastReceiver receiver;
@@ -21,32 +23,40 @@ public class SecondActivity extends AppCompatActivity {
         String IPAddress = intent.getStringExtra(MainActivity.IPADDRESS_TAG);
         String port = intent.getStringExtra(MainActivity.PORT_TAG);
 
-        Log.i("hey", "SecondActivity>> " + IPAddress + ":" + port);
+        Log.i(TAG, "SecondActivity>> " + IPAddress + ":" + port);
 
         IntentFilter filter = new IntentFilter("send_sensor_data.action.service");
         receiver = new MyBroadcastReceiver();
         registerReceiver(receiver, filter);
 
-        Log.i("hey", "Registered Receiver");
+        Log.i(TAG, "Registered Receiver");
         intentMyService = new Intent(this, SendSensorDataService.class);
-        //intentMyService.putExtra(MainActivity.IPADDRESS_TAG, IPAddress);
-        //intentMyService.putExtra(MainActivity.IPADDRESS_TAG, port);
+
+        intentMyService.putExtra(MainActivity.IPADDRESS_TAG, IPAddress);
+        intentMyService.putExtra(MainActivity.PORT_TAG, port);
+        Log.i(TAG, "IPAddress: " + IPAddress);
+        Log.i(TAG, "port: " + port+"");
+
         startService(intentMyService);
-        Log.i("hey", "Started Service");
+        Log.i(TAG, "Started Service");
     }
 
     public class MyBroadcastReceiver extends BroadcastReceiver {
 
         @Override
         public void onReceive(Context context, Intent intent) {
-            //if(intent.getAction().equals("send_sensor_data.action.service")) {
-                Log.i("hey", "In broadcast reciver");
+            if(intent.getAction().equals("send_sensor_data.action.service")) {
+                Log.i(TAG, "In broadcast reciver");
 
-                Log.i("hey", intent.getStringExtra(SendSensorDataService.ACCELEROMETER_TAG));
-                Log.i("hey", intent.getStringExtra(SendSensorDataService.HUMIDITY_TAG));
-                Log.i("hey", intent.getStringExtra(SendSensorDataService.PRESSURE_TAG));
+//                Log.i("hey", "Accel value: " + intent.getStringExtra(SendSensorDataService.ACCELEROMETER_TAG));
+//                Log.i("hey", "Temp value: " + intent.getStringExtra(SendSensorDataService.TEMPERATURE_TAG));
+//                Log.i("hey", "Humidity value: " + intent.getStringExtra(SendSensorDataService.HUMIDITY_TAG));
+//                Log.i("hey", "Pressure value: " + intent.getStringExtra(SendSensorDataService.PRESSURE_TAG));
+//                Log.i("hey", "Proximity value: " + intent.getStringExtra(SendSensorDataService.PROXIMITY_TAG));
+//                Log.i("hey", "Magnetometer value: " + intent.getStringExtra(SendSensorDataService.MAGNETOMETER_TAG));
+//                Log.i("hey", "Light value: " + intent.getStringExtra(SendSensorDataService.LIGHT_TAG));
 
-            //}
+            }
         }
     }
 }

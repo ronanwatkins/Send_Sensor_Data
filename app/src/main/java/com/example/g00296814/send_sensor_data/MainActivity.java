@@ -9,6 +9,8 @@ import android.widget.EditText;
 
 public class MainActivity extends AppCompatActivity {
 
+    private final String TAG = MainActivity.class.getSimpleName();
+
     public final static String IPADDRESS_TAG = "IPAddress";
     public final static String PORT_TAG = "port";
 
@@ -23,6 +25,7 @@ public class MainActivity extends AppCompatActivity {
         IPAddress = (EditText) findViewById(R.id.IPAddressField);
         port = (EditText) findViewById(R.id.portField);
 
+        Log.i(TAG, TAG);
     }
 
     public void connect(View clickedButton) {
@@ -30,7 +33,7 @@ public class MainActivity extends AppCompatActivity {
         String IPAddress_text = IPAddress.getText().toString();
         String port_text = port.getText().toString();
 
-        Log.i("hey", "MainActivity>> " + IPAddress_text + ":" + port_text);
+        Log.i(TAG, "MainActivity>> " + IPAddress_text + ":" + port_text);
 
         Intent intent = new Intent(this, SecondActivity.class);
 
