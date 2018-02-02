@@ -3,12 +3,17 @@ package com.example.g00296814.send_sensor_data;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.location.Location;
+import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.AsyncTask;
+import android.os.BatteryManager;
+import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
 import android.widget.TextView;
@@ -32,7 +37,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-public class SendSensorDataService extends Service implements SensorEventListener {
+public class SendSensorDataService extends Service implements SensorEventListener, LocationListener {
 
     private final String TAG = SendSensorDataService.class.getSimpleName();
 
@@ -40,9 +45,11 @@ public class SendSensorDataService extends Service implements SensorEventListene
     private static final String ACCELEROMETER_TAG = "accelerometer";
     private static final String HUMIDITY_TAG = "humidity";
     private static final String PRESSURE_TAG = "pressure";
-    private static final String MAGNETOMETER_TAG = "magnetometer";
+    private static final String MAGNETOMETER_TAG = "magnetic-field";
     private static final String PROXIMITY_TAG = "proximity";
     private static final String TEMPERATURE_TAG = "temperature";
+    private static final String GEO_TAG = "location";
+    private static final String BATTERY_TAG = "battery";
 
     private SensorManager mSensorManager;
     private LocationManager mLocationManager;
@@ -56,15 +63,14 @@ public class SendSensorDataService extends Service implements SensorEventListene
     private BufferedWriter writer;
 
     private String lightValue;
-    private String accelerometerValue = "nathin";
+    private String accelerometerValue;
     private String humidityValue;
     private String pressureValue;
     private String magneticFieldValue;
     private String proximityValue;
     private String temperatureValue;
     private String GPSValue;
-
-    private JSONObject jsonObject;
+    private String batteryValue;
 
     public SendSensorDataService() {
     }
@@ -117,15 +123,22 @@ public class SendSensorDataService extends Service implements SensorEventListene
             initializeService();
         }
 
+        final IntentFilter intentFilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
+        final Intent batteryStatus = this.registerReceiver(null, intentFilter);
+
         Thread serviceThread = new Thread(new Runnable() {
+
+
             @Override
             public void run() {
                 while(isRunning) {
                     try {
-                        Thread.sleep(5000);
+                        Thread.sleep(500);
 
-                        //Log.i(TAG, "In Service Loop");
-                        establishConnection();
+                        batteryValue = batteryStatus.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)+"";
+
+                        Log.i("Battery precentage: ", "Battery precentage: " + batteryValue);
+
                         Intent intentData = new Intent("send_sensor_data.action.service");
 
                         intentData.putExtra(LIGHT_TAG, lightValue);
@@ -135,8 +148,10 @@ public class SendSensorDataService extends Service implements SensorEventListene
                         intentData.putExtra(MAGNETOMETER_TAG, magneticFieldValue);
                         intentData.putExtra(PROXIMITY_TAG, proximityValue);
                         intentData.putExtra(TEMPERATURE_TAG, temperatureValue);
+                        intentData.putExtra(GEO_TAG, GPSValue);
+                        intentData.putExtra(BATTERY_TAG, batteryValue);
 
-                        jsonObject = new JSONObject();
+                        JSONObject jsonObject = new JSONObject();
                         jsonObject.put(LIGHT_TAG, lightValue);
                         jsonObject.put(ACCELEROMETER_TAG, accelerometerValue);
                         jsonObject.put(HUMIDITY_TAG, humidityValue);
@@ -144,8 +159,10 @@ public class SendSensorDataService extends Service implements SensorEventListene
                         jsonObject.put(MAGNETOMETER_TAG, magneticFieldValue);
                         jsonObject.put(PROXIMITY_TAG, proximityValue);
                         jsonObject.put(TEMPERATURE_TAG, temperatureValue);
+                        jsonObject.put(GEO_TAG, GPSValue);
+                        jsonObject.put(BATTERY_TAG, batteryValue);
 
-                        //Log.i("hey", "JSON: " + jsonObject.toString());
+                        sendJSON(jsonObject);
 
                         sendBroadcast(intentData);
                     } catch (Exception ie) {
@@ -159,9 +176,18 @@ public class SendSensorDataService extends Service implements SensorEventListene
         return 1;
     }
 
+    @Override
+    public void onLocationChanged(Location location) {
+        GPSValue = String.format("%.2f", location.getLongitude()) + " " + String.format("%.2f", location.getLatitude());
+    }
+
     private void initializeService() {
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
+                2000, 1, this);
+        Location location = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+        GPSValue = String.format("%.2f", location.getLongitude()) + " " + String.format("%.2f", location.getLatitude());
 
         Sensor mLight = mSensorManager.getDefaultSensor(Sensor.TYPE_LIGHT);
         Sensor mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
@@ -179,7 +205,6 @@ public class SendSensorDataService extends Service implements SensorEventListene
         mSensorManager.registerListener(this, mMagnetometer, SensorManager.SENSOR_DELAY_NORMAL);
         mSensorManager.registerListener(this, mHumidity, SensorManager.SENSOR_DELAY_NORMAL);
 
-        writer = establishConnection();
         isFirstRun = false;
     }
 
@@ -190,28 +215,29 @@ public class SendSensorDataService extends Service implements SensorEventListene
         mSensorManager.unregisterListener(this);
     }
 
-    private BufferedWriter establishConnection() {
+    private void sendJSON(JSONObject jsonObject) {
 
-        Log.i(TAG, "establishConnection");
+        Log.i(TAG, "sendJSON >>");
         Log.i(TAG, "IPAddress: " + IPAddress);
         Log.i(TAG, "Port: " + port);
+        //Log.i(TAG, "JSON: " + jsonObject.toString());
 
-        new AsyncTask<Void, Void, BufferedWriter>(){
+        new AsyncTask<JSONObject, Void, String>(){
 
             @Override
-            protected BufferedWriter doInBackground(Void... voids) {
-                BufferedWriter writer = null;
+            protected String doInBackground(JSONObject... jsonObject) {
+                Log.i(TAG, "In do in background");
 
                 HttpClient client = new DefaultHttpClient();
                 HttpPost httpPost = new HttpPost("http://"+IPAddress+":"+port+"/");
                 List<NameValuePair> params = new ArrayList<NameValuePair>();
-                // for (int i = 1; i < paramNamesAndValues.length - 1; i = i + 2) {
+
                 String paramName = "JSON";
-                String paramValue = jsonObject.toString();  // NOT URL-Encoded
+                //String paramValue = "HI";
+                String paramValue = jsonObject[0].toString();  // NOT URL-Encoded
                 Log.i(TAG, "paramName: " + paramName);
                 Log.i(TAG, "paramValue: " + paramValue);
                 params.add(new BasicNameValuePair(paramName, paramValue));
-                // }
 
                 ResponseHandler<String> handler = new BasicResponseHandler();
                 String result = "";
@@ -224,18 +250,37 @@ public class SendSensorDataService extends Service implements SensorEventListene
                     Log.i(TAG, "result: "+ result);
                 } catch (Exception ee) {
                     ee.printStackTrace();
-                    Log.i(TAG, "error: "+ ee.getMessage());
+                    Log.e(TAG, "Exception: "+ ee);
+                    Log.i(TAG, Log.getStackTraceString(ee));
                 }
 
-                return writer;
+                return result;
             }
 
-        }.execute();
-
-        return writer;
+            @Override
+            protected void onPostExecute(String s) {
+                Log.i(TAG, "onPostExecute>> ");
+                Log.i(TAG, "Result: " + s);
+            }
+        }.executeOnExecutor(AsyncTask.SERIAL_EXECUTOR, jsonObject);
     }
 
-//    private void connect(final Intent intent) throws MalformedURLException {
+    @Override
+    public void onProviderEnabled(String provider) {
+
+    }
+
+    @Override
+    public void onProviderDisabled(String provider) {
+
+    }
+
+    @Override
+    public void onStatusChanged(String provider, int status, Bundle extras) {
+
+    }
+
+    //    private void connect(final Intent intent) throws MalformedURLException {
 //        final String IPAddress = intent.getStringExtra(MainActivity.IPADDRESS_TAG);
 //        final String port = intent.getStringExtra(MainActivity.PORT_TAG);
 //

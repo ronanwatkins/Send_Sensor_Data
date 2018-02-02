@@ -1,6 +1,10 @@
 package com.example.g00296814.send_sensor_data;
 
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -25,7 +29,11 @@ public class MainActivity extends AppCompatActivity {
         IPAddress = (EditText) findViewById(R.id.IPAddressField);
         port = (EditText) findViewById(R.id.portField);
 
-        Log.i(TAG, TAG);
+
+        ActivityCompat.requestPermissions(this, new String[] {
+                        Manifest.permission.ACCESS_FINE_LOCATION,
+                        Manifest.permission.ACCESS_COARSE_LOCATION },
+                1);
     }
 
     public void connect(View clickedButton) {
