@@ -7,6 +7,6 @@
     <string name="port">Port:</string>
     <string name="connect">Connect</string>
     <string name="title_activity_second">SecondActivity</string>
-    <string name="ip_address_value">10.3.2.34</string>
+    <string name="ip_address_value">10.12.20.110</string>
     <string name="port_value">80</string>
 </resources>

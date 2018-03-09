@@ -29,7 +29,6 @@ public class MainActivity extends AppCompatActivity {
         IPAddress = (EditText) findViewById(R.id.IPAddressField);
         port = (EditText) findViewById(R.id.portField);
 
-
         ActivityCompat.requestPermissions(this, new String[] {
                         Manifest.permission.ACCESS_FINE_LOCATION,
                         Manifest.permission.ACCESS_COARSE_LOCATION },

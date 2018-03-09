@@ -7,5 +7,15 @@
         android:layout_height="match_parent"
         tools:context="com.example.g00296814.send_sensor_data.SecondActivity">
 
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                  android:orientation="vertical"
+                  android:layout_width="1000dp"
+                  android:layout_height="1000dp" tools:layout_editor_absoluteY="0dp" tools:layout_editor_absoluteX="0dp">
 
+        <ListView android:layout_width="fill_parent"
+                  android:layout_height="fill_parent"
+                  android:id="@+id/mainListView">
+        </ListView>
+
+    </LinearLayout>
 </android.support.constraint.ConstraintLayout>

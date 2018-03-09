@@ -1,23 +1,37 @@
 package com.example.g00296814.send_sensor_data;
 
 import android.content.*;
-import android.hardware.SensorEventListener;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
+
+import java.util.ArrayList;
+import java.util.HashMap;
 
 public class SecondActivity extends AppCompatActivity {
 
     private final String TAG = SecondActivity.class.getSimpleName();
 
-    private ComponentName service;
     private Intent intentMyService;
     private BroadcastReceiver receiver;
+
+    private ListView listView;
+
+    private ArrayList<String> sensorList = new ArrayList<>();
+    private ArrayAdapter<String> listAdapter ;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_second);
+
+        listView = (ListView) findViewById(R.id.mainListView);
+
+        listAdapter = new ArrayAdapter<>(this, R.layout.row, sensorList);
+
+        listView.setAdapter(listAdapter);
 
         Intent intent = getIntent();
         String IPAddress = intent.getStringExtra(MainActivity.IPADDRESS_TAG);
@@ -46,16 +60,18 @@ public class SecondActivity extends AppCompatActivity {
         @Override
         public void onReceive(Context context, Intent intent) {
             if(intent.getAction().equals("send_sensor_data.action.service")) {
-                Log.i(TAG, "In broadcast reciver");
+                Log.i(TAG, "In broadcast receiver");
 
-//                Log.i("hey", "Accel value: " + intent.getStringExtra(SendSensorDataService.ACCELEROMETER_TAG));
-//                Log.i("hey", "Temp value: " + intent.getStringExtra(SendSensorDataService.TEMPERATURE_TAG));
-//                Log.i("hey", "Humidity value: " + intent.getStringExtra(SendSensorDataService.HUMIDITY_TAG));
-//                Log.i("hey", "Pressure value: " + intent.getStringExtra(SendSensorDataService.PRESSURE_TAG));
-//                Log.i("hey", "Proximity value: " + intent.getStringExtra(SendSensorDataService.PROXIMITY_TAG));
-//                Log.i("hey", "Magnetometer value: " + intent.getStringExtra(SendSensorDataService.MAGNETOMETER_TAG));
-//                Log.i("hey", "Light value: " + intent.getStringExtra(SendSensorDataService.LIGHT_TAG));
+                sensorList.clear();
 
+                HashMap<String, String> sensors = (HashMap<String, String>) intent.getSerializableExtra("sensors");
+
+                for(String sensor : sensors.keySet()) {
+                    Log.i("hashmap", sensor + " " + sensors.get(sensor));
+                    sensorList.add(sensor.substring(0, 1).toUpperCase() + sensor.substring(1) + ": " + sensors.get(sensor));
+                }
+
+                listAdapter.notifyDataSetChanged();
             }
         }
     }
