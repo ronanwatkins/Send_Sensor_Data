@@ -1,12 +1,11 @@
 <resources>
     <string name="app_name">Send Sensor Data</string>
-    <string name="settings_description">Enter the connection settings below. They are displayed under the "Connection
-        tab of your GUI
+    <string name="settings_description">Enter the connection settings below.
     </string>
     <string name="ip_address">IP Address:</string>
     <string name="port">Port:</string>
     <string name="connect">Connect</string>
     <string name="title_activity_second">SecondActivity</string>
-    <string name="ip_address_value">10.12.20.110</string>
-    <string name="port_value">80</string>
+    <string name="error">Host unreachable. Make sure the IP Address and port number is correct</string>
+    <string name="connecting">Connecting...</string>
 </resources>
