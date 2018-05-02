@@ -50,6 +50,8 @@ public class SendSensorDataService extends Service implements SensorEventListene
     public static final String GEO = "location";
     public static final String BATTERY = "battery";
 
+    private final int INTERVAL = 200;
+
     private SensorManager mSensorManager;
     private LocationManager mLocationManager;
 
@@ -59,6 +61,8 @@ public class SendSensorDataService extends Service implements SensorEventListene
     private boolean isRunning = true;
     private boolean isFirstRun = true;
 
+    private final Object lock = new Object();
+
     private HashMap<String, String> sensors;
 
     public SendSensorDataService() {
@@ -66,57 +70,59 @@ public class SendSensorDataService extends Service implements SensorEventListene
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
-
     }
 
     @Override
     public void onSensorChanged(SensorEvent event) {
+
         String value;
 
-        switch(event.sensor.getType()) {
-            case Sensor.TYPE_LIGHT:
-                sensors.put(LIGHT, event.values[0]+"");
-                break;
-            case Sensor.TYPE_PRESSURE:
-                sensors.put(PRESSURE, event.values[0]+"");
-                break;
-            case Sensor.TYPE_AMBIENT_TEMPERATURE:
-                sensors.put(TEMPERATURE, event.values[0]+"");
-                break;
-            case Sensor.TYPE_PROXIMITY:
-                sensors.put(PROXIMITY, event.values[0]+"");
-                break;
-            case Sensor.TYPE_RELATIVE_HUMIDITY:
-                sensors.put(HUMIDITY, event.values[0]+"");
-                break;
-            case Sensor.TYPE_ACCELEROMETER:
-                value = "[\"";
-                value += String.format("%.2f", event.values[0]) + "\", \"";
-                value += String.format("%.2f", event.values[1]) + "\", \"";
-                value += String.format("%.2f", event.values[2]) + "\"]";
-                sensors.put(ACCELEROMETER, value);
-                break;
-            case Sensor.TYPE_MAGNETIC_FIELD:
-                value = "[\"";
-                value += String.format("%.2f", event.values[0]) + "\", \"";
-                value += String.format("%.2f", event.values[1]) + "\", \"";
-                value += String.format("%.2f", event.values[2]) + "\"]";
-                sensors.put(MAGNETOMETER, value);
-                break;
-            case Sensor.TYPE_ORIENTATION:
-                value = "[\"";
-                value += String.format("%.2f", event.values[0]) + "\", \"";
-                value += String.format("%.2f", event.values[1]) + "\", \"";
-                value += String.format("%.2f", event.values[2]) + "\"]";
-                sensors.put(ORIENTATION, value);
-                break;
-            case Sensor.TYPE_GYROSCOPE:
-                value = "[\"";
-                value += String.format("%.2f", event.values[0]) + "\", \"";
-                value += String.format("%.2f", event.values[1]) + "\", \"";
-                value += String.format("%.2f", event.values[2]) + "\"]";
-                sensors.put(GYROSCOPE, value);
-                break;
+        synchronized (lock) {
+            switch (event.sensor.getType()) {
+                case Sensor.TYPE_LIGHT:
+                    sensors.put(LIGHT, event.values[0] + "");
+                    break;
+                case Sensor.TYPE_PRESSURE:
+                    sensors.put(PRESSURE, event.values[0] + "");
+                    break;
+                case Sensor.TYPE_AMBIENT_TEMPERATURE:
+                    sensors.put(TEMPERATURE, event.values[0] + "");
+                    break;
+                case Sensor.TYPE_PROXIMITY:
+                    sensors.put(PROXIMITY, event.values[0] + "");
+                    break;
+                case Sensor.TYPE_RELATIVE_HUMIDITY:
+                    sensors.put(HUMIDITY, event.values[0] + "");
+                    break;
+                case Sensor.TYPE_ACCELEROMETER:
+                    value = "[\"";
+                    value += String.format("%.2f", event.values[0]) + "\", \"";
+                    value += String.format("%.2f", event.values[1]) + "\", \"";
+                    value += String.format("%.2f", event.values[2]) + "\"]";
+                    sensors.put(ACCELEROMETER, value);
+                    break;
+                case Sensor.TYPE_MAGNETIC_FIELD:
+                    value = "[\"";
+                    value += String.format("%.2f", event.values[0]) + "\", \"";
+                    value += String.format("%.2f", event.values[1]) + "\", \"";
+                    value += String.format("%.2f", event.values[2]) + "\"]";
+                    sensors.put(MAGNETOMETER, value);
+                    break;
+                case Sensor.TYPE_ORIENTATION:
+                    value = "[\"";
+                    value += String.format("%.2f", event.values[0]) + "\", \"";
+                    value += String.format("%.2f", event.values[1]) + "\", \"";
+                    value += String.format("%.2f", event.values[2]) + "\"]";
+                    sensors.put(ORIENTATION, value);
+                    break;
+                case Sensor.TYPE_GYROSCOPE:
+                    value = "[\"";
+                    value += String.format("%.2f", event.values[0]) + "\", \"";
+                    value += String.format("%.2f", event.values[1]) + "\", \"";
+                    value += String.format("%.2f", event.values[2]) + "\"]";
+                    sensors.put(GYROSCOPE, value);
+                    break;
+            }
         }
     }
 
@@ -140,24 +146,29 @@ public class SendSensorDataService extends Service implements SensorEventListene
             public void run() {
                 while (isRunning) {
                     try {
-                        Thread.sleep(100);
+                        Thread.sleep(INTERVAL);
 
-                        Intent intentData = new Intent("send_sensor_data.action.service");
-                        intentData.putExtra("sensors", sensors);
+                        synchronized (lock) {
 
-                        JSONObject jsonObject = new JSONObject();
-                        for(String sensor : sensors.keySet()) {
-                            intentData.putExtra(sensor, sensors.get(sensor));
+                            Intent intentData = new Intent("send_sensor_data.action.service");
+                            intentData.putExtra("sensors", sensors);
 
-                            if(sensor.equals(ORIENTATION) || sensor.equals(ACCELEROMETER) || sensor.equals(MAGNETOMETER) || sensor.equals(GYROSCOPE) || sensor.equals(GEO)) {
-                                jsonObject.put(sensor, new JSONArray(sensors.get(sensor)));
+                            JSONObject jsonObject = new JSONObject();
+                            for (String sensor : sensors.keySet()) {
+                                intentData.putExtra(sensor, sensors.get(sensor));
+
+                                if (sensor.equals(ORIENTATION) || sensor.equals(ACCELEROMETER) || sensor.equals(MAGNETOMETER) || sensor.equals(GYROSCOPE) || sensor.equals(GEO)) {
+                                    jsonObject.put(sensor, new JSONArray(sensors.get(sensor)));
+                                } else
+                                    jsonObject.put(sensor, sensors.get(sensor));
                             }
-                            else
-                                jsonObject.put(sensor, sensors.get(sensor));
+
+                            sendJSON(jsonObject);
+                            sendBroadcast(intentData);
+
+                            sensors = new HashMap<>();
                         }
 
-                        sendJSON(jsonObject);
-                        sendBroadcast(intentData);
                     } catch (JSONException jse) {
                         Log.e(TAG, "JSON Exception: " + jse.getMessage());
                         Log.e(TAG, Log.getStackTraceString(jse));

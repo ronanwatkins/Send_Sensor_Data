@@ -131,7 +131,7 @@ public class MainActivity extends AppCompatActivity {
             Log.i(TAG, "Result: " + isValid);
 
             if(isValid) {
-                Log.i(TAG, "its valid");
+                Log.i(TAG, "it's valid");
 
                 Intent intent = new Intent(getBaseContext(), SecondActivity.class);
                 intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
